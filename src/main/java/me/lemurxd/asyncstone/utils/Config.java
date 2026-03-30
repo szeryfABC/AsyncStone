@@ -24,7 +24,16 @@ public enum Config {
     GENERATOR_ITEM_LORE("generator.item.lore", Arrays.asList(
             "&7Postaw ten blok, aby",
             "&7rozpocząć generowanie kamienia."
-    ), true)
+    ), true),
+    GENERATOR_RECIPE_SHAPE("generator.recipe.shape", Arrays.asList(
+            "SSS",
+            "SRS",
+            "SSS"
+    )),
+    GENERATOR_RECIPE_INGREDIENTS("generator.recipe.ingredients", Arrays.asList(
+            "S:STONE",
+            "R:REDSTONE"
+    ))
 
     ;
 
