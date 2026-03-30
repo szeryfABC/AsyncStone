@@ -40,10 +40,9 @@ public class AsyncStoneCommand implements CommandExecutor, TabCompleter {
 
         switch (subCommand) {
             case "reload":
-                File configFile = new File(plugin.getDataFolder(), "config.yml");
-                Config.load(configFile);
+                plugin.softReload();
 
-                sender.sendMessage("§a[AsyncStone] Configuration successfully reloaded!");
+                sender.sendMessage("§a[AsyncStone] Konfiguracja i receptury zostaly przeladowane!");
                 break;
 
             case "help":
