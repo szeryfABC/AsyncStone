@@ -1,5 +1,6 @@
 package me.lemurxd.asyncstone;
 
+import me.lemurxd.asyncstone.commands.AsyncStoneCommand;
 import me.lemurxd.asyncstone.generators.StoneCacheManager;
 import me.lemurxd.asyncstone.generators.StoneGeneratorItem;
 import me.lemurxd.asyncstone.listeners.GeneratorPlaceEvent;
@@ -21,6 +22,10 @@ public class AsyncStone extends JavaPlugin {
 
         registerRecipes();
         registerListeners();
+
+        AsyncStoneCommand commandClass = new AsyncStoneCommand(this);
+        getCommand("asyncstone").setExecutor(commandClass);
+        getCommand("asyncstone").setTabCompleter(commandClass);
 
         getLogger().info("AsyncStone on!");
     }

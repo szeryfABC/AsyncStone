@@ -3,4 +3,8 @@ version: 0.1
 main: me.lemurxd.asyncstone.AsyncStone
 api-version: 1.21
 author: lemurxd_
-description: Blazing-fast stone generator with O(1) complexity.
+description: Blazing-fast stone generator.
+commands:
+  asyncstone:
+    description: Main command for AsyncStone plugin.
+    aliases: [astone, as]
