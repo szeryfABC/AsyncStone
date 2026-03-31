@@ -1,54 +1,78 @@
 package me.lemurxd.asyncstone.listeners;
 
 import me.lemurxd.asyncstone.AsyncStone;
+import me.lemurxd.asyncstone.generators.BlockGenerationEngine;
 import me.lemurxd.asyncstone.generators.StoneCacheManager;
+import me.lemurxd.asyncstone.generators.StoneGenerator;
 import me.lemurxd.asyncstone.generators.StoneGeneratorItem;
-import org.bukkit.Material;
+import me.lemurxd.asyncstone.generators.settings.GeneratorSettings;
+import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.inventory.ItemStack;
 
 public class GeneratorBreakEvent implements Listener {
 
     private final AsyncStone plugin;
     private final StoneCacheManager cacheManager;
+    private final BlockGenerationEngine generationEngine;
 
-    public GeneratorBreakEvent(AsyncStone plugin, StoneCacheManager cacheManager) {
+    public GeneratorBreakEvent(AsyncStone plugin, StoneCacheManager cacheManager, BlockGenerationEngine generationEngine) {
         this.plugin = plugin;
         this.cacheManager = cacheManager;
+        this.generationEngine = generationEngine;
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
+        Location loc = block.getLocation();
 
-        if (block.getType() == Material.STONE) {
+        StoneGenerator generatorAtLoc = cacheManager.getGeneratorAt(loc);
 
-            org.bukkit.Location blockBelowLoc = block.getLocation().subtract(0, 1, 0);
+        if (generatorAtLoc != null) {
+            GeneratorSettings settings = plugin.getGeneratorsConfig().getSettings(generatorAtLoc.getId());
+            if (settings == null) return;
 
-            if (cacheManager.isStoneGenerator(blockBelowLoc)) {
+            if (settings.getType() == GeneratorSettings.Type.REPLACE) {
 
-                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                    block.setType(Material.STONE, false);
-                }, 40L);
+                if (event.getPlayer().isSneaking()) {
+                    destroyGenerator(event, generatorAtLoc, loc);
+                } else {
 
-                return;
+                    generationEngine.triggerGeneration(generatorAtLoc);
+                }
+            } else {
+                destroyGenerator(event, generatorAtLoc, loc);
             }
+            return;
         }
 
-        if (block.getType() == Material.END_STONE) {
+        Location belowLoc = loc.clone().subtract(0, 1, 0);
+        StoneGenerator generatorBelow = cacheManager.getGeneratorAt(belowLoc);
 
-            org.bukkit.Location brokenLoc = block.getLocation();
+        if (generatorBelow != null) {
+            GeneratorSettings settings = plugin.getGeneratorsConfig().getSettings(generatorBelow.getId());
 
-            if (cacheManager.isStoneGenerator(brokenLoc)) {
-
-                cacheManager.removeGenerator(brokenLoc);
-
-                block.getWorld().dropItemNaturally(brokenLoc, StoneGeneratorItem.create());
-
+            if (settings != null && settings.getType() == GeneratorSettings.Type.ABOVE) {
+                generationEngine.triggerGeneration(generatorBelow);
             }
         }
+    }
+
+    private void destroyGenerator(BlockBreakEvent event, StoneGenerator generator, Location loc) {
+        cacheManager.removeGenerator(generator.getLocation());
+
+        ItemStack itemToDrop = StoneGeneratorItem.create(generator.getId());
+
+        if (itemToDrop != null) {
+            event.setDropItems(false);
+            loc.getWorld().dropItemNaturally(loc, itemToDrop);
+        }
+
+        event.getPlayer().sendMessage("§c[AsyncStone] Zniszczono stoniarke!");
     }
 }

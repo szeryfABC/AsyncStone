@@ -1,10 +1,12 @@
 package me.lemurxd.asyncstone;
 
 import me.lemurxd.asyncstone.commands.AsyncStoneCommand;
+import me.lemurxd.asyncstone.generators.BlockGenerationEngine;
 import me.lemurxd.asyncstone.generators.StoneCacheManager;
 import me.lemurxd.asyncstone.generators.StoneGenerator;
 import me.lemurxd.asyncstone.generators.settings.GeneratorsConfig;
 import me.lemurxd.asyncstone.listeners.ChunkLoadListener;
+import me.lemurxd.asyncstone.listeners.GeneratorBreakEvent;
 import me.lemurxd.asyncstone.listeners.GeneratorPlaceEvent;
 import me.lemurxd.asyncstone.records.ChunkKey;
 import me.lemurxd.asyncstone.utils.Config;
@@ -22,6 +24,7 @@ public class AsyncStone extends JavaPlugin {
     private RecipeManager recipeManager;
     private GeneratorsConfig generatorsConfig;
     private DatabaseManager databaseManager;
+    private BlockGenerationEngine  generationEngine;
 
     @Override
     public void onEnable() {
@@ -29,10 +32,11 @@ public class AsyncStone extends JavaPlugin {
 
         new AsyncSaveTask(cacheManager, databaseManager).runTaskTimerAsynchronously(this, 200L, 200L);
 
-        cacheManager = new StoneCacheManager();
-        recipeManager = new RecipeManager(this);
+        this.cacheManager = new StoneCacheManager();
+        this.recipeManager = new RecipeManager(this);
         this.generatorsConfig = new GeneratorsConfig(this);
         this.databaseManager = new DatabaseManager(this);
+        this.generationEngine = new BlockGenerationEngine(this);
 
         loadConfiguration();
 
@@ -76,7 +80,8 @@ public class AsyncStone extends JavaPlugin {
 
 
     private void registerListeners() {
-        getServer().getPluginManager().registerEvents(new GeneratorPlaceEvent(cacheManager), this);
+        getServer().getPluginManager().registerEvents(new GeneratorPlaceEvent(instance, cacheManager, generationEngine), this);
+        getServer().getPluginManager().registerEvents(new GeneratorBreakEvent(instance, cacheManager, generationEngine), this);
         getServer().getPluginManager().registerEvents(new ChunkLoadListener(cacheManager, databaseManager), this);
     }
 

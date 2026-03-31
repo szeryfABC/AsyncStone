@@ -12,6 +12,16 @@ public class StoneCacheManager {
     private final Map<ChunkKey, Map<Location, StoneGenerator>> cache = new ConcurrentHashMap<>();
     private final Set<ChunkKey> dirtyChunks = ConcurrentHashMap.newKeySet();
 
+    public StoneGenerator getGeneratorAt(Location loc) {
+        ChunkKey key = new ChunkKey(loc.getWorld().getUID(), loc.getBlockX() >> 4, loc.getBlockZ() >> 4);
+        Map<Location, StoneGenerator> chunkGenerators = cache.get(key);
+
+        if (chunkGenerators != null) {
+            return chunkGenerators.get(loc);
+        }
+        return null;
+    }
+
     public void loadChunkIntoCache(ChunkKey key, List<StoneGenerator> generators) {
         Map<Location, StoneGenerator> chunkMap = new ConcurrentHashMap<>();
         for (StoneGenerator gen : generators) {
