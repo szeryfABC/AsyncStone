@@ -64,6 +64,10 @@ public class AsyncStone extends JavaPlugin {
         generatorsConfig.load();
     }
 
+    public GeneratorsConfig getGeneratorsConfig() {
+        return generatorsConfig;
+    }
+
     public void softReload() {
         loadConfiguration();
         recipeManager.reloadRecipes();

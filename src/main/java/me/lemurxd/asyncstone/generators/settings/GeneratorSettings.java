@@ -20,26 +20,38 @@ public class GeneratorSettings {
     private final String id;
     private final Material material;
     private final String name;
+    private final List<String> lore; // NOWE
     private final Type type;
     private final int cooldown;
     private final List<DropEntry> drops;
     private final UpgradeData upgradeData;
+    private final List<String> recipeShape; // NOWE
+    private final List<String> recipeIngredients; // NOWE
 
-    public GeneratorSettings(String id, Material material, String name, Type type, int cooldown, List<DropEntry> drops, UpgradeData upgradeData) {
+    public GeneratorSettings(String id, Material material, String name, List<String> lore, Type type, int cooldown, List<DropEntry> drops, UpgradeData upgradeData, List<String> recipeShape, List<String> recipeIngredients) {
         this.id = id;
         this.material = material;
         this.name = name;
+
+        this.lore = lore != null ? List.copyOf(lore) : List.of();
+
         this.type = type;
         this.cooldown = cooldown;
         this.drops = List.copyOf(drops);
         this.upgradeData = upgradeData;
+
+        this.recipeShape = recipeShape != null ? List.copyOf(recipeShape) : null;
+        this.recipeIngredients = recipeIngredients != null ? List.copyOf(recipeIngredients) : null;
     }
 
     public String getId() { return id; }
     public Material getMaterial() { return material; }
     public String getName() { return name; }
+    public List<String> getLore() { return lore; } // NOWE
     public Type getType() { return type; }
     public int getCooldown() { return cooldown; }
     public List<DropEntry> getDrops() { return drops; }
     public UpgradeData getUpgradeData() { return upgradeData; }
+    public List<String> getRecipeShape() { return recipeShape; } // NOWE
+    public List<String> getRecipeIngredients() { return recipeIngredients; } // NOWE
 }

@@ -7,10 +7,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class GeneratorsConfig {
 
@@ -82,7 +79,16 @@ public class GeneratorsConfig {
                     upgradeData = new GeneratorSettings.UpgradeData(nextGen, costs);
                 }
 
-                GeneratorSettings settings = new GeneratorSettings(key, material, name, type, cooldown, drops, upgradeData);
+                List<String> lore = section.getStringList("lore");
+                List<String> recipeShape = null;
+                List<String> recipeIngredients = null;
+
+                if (section.contains("recipe")) {
+                    recipeShape = section.getStringList("recipe.shape");
+                    recipeIngredients = section.getStringList("recipe.ingredients");
+                }
+
+                GeneratorSettings settings = new GeneratorSettings(key, material, name, lore, type, cooldown, drops, upgradeData, recipeShape, recipeIngredients);
                 settingsCache.put(key, settings);
 
             } catch (Exception e) {
@@ -90,6 +96,10 @@ public class GeneratorsConfig {
                 e.printStackTrace();
             }
         }
+    }
+
+    public Set<String> getAllIds() {
+        return settingsCache.keySet();
     }
 
     public GeneratorSettings getSettings(String generatorId) {

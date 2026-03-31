@@ -1,7 +1,9 @@
 package me.lemurxd.asyncstone.generators;
 
 import me.lemurxd.asyncstone.AsyncStone;
+import me.lemurxd.asyncstone.generators.settings.GeneratorSettings;
 import me.lemurxd.asyncstone.utils.Config;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -9,29 +11,40 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class StoneGeneratorItem {
 
-    public static final NamespacedKey GENERATOR_KEY = new NamespacedKey(AsyncStone.getInstance(), "is_generator");
+    // Używaj tego klucza wszędzie (nawet w AsyncStoneCommand!), żeby uniknąć literówek
+    public static final NamespacedKey GENERATOR_ID_KEY = new NamespacedKey(AsyncStone.getInstance(), "generator_id");
 
-    public static ItemStack create() {
-        String materialName = Config.GENERATOR_ITEM_MATERIAL.getString().toUpperCase();
-        Material material = Material.matchMaterial(materialName);
+    public static ItemStack create(String generatorId) {
+        AsyncStone plugin = AsyncStone.getInstance();
+        GeneratorSettings settings = plugin.getGeneratorsConfig().getSettings(generatorId);
 
-        if (material == null) {
-            AsyncStone.getInstance().getLogger().warning("Niepoprawny material stoniarki w configu: " + materialName + "! Uzyto domyslnego END_STONE.");
-            material = Material.END_STONE;
+        if (settings == null) {
+            plugin.getLogger().warning("Nie mozna stworzyc przedmiotu! Stoniarka o ID '" + generatorId + "' nie istnieje.");
+            return null;
         }
 
-        ItemStack item = new ItemStack(material);
+        ItemStack item = new ItemStack(settings.getMaterial());
         ItemMeta meta = item.getItemMeta();
 
         if (meta != null) {
-            meta.setDisplayName(Config.GENERATOR_ITEM_NAME.getString());
+            // Ustawiamy kolorową nazwę
+            meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', settings.getName()));
 
-            meta.setLore(Config.GENERATOR_ITEM_LORE.getStringList());
+            // Ustawiamy kolorowe lore (jeśli istnieje)
+            if (settings.getLore() != null && !settings.getLore().isEmpty()) {
+                List<String> coloredLore = settings.getLore().stream()
+                        .map(line -> ChatColor.translateAlternateColorCodes('&', line))
+                        .collect(Collectors.toList());
+                meta.setLore(coloredLore);
+            }
 
-            meta.getPersistentDataContainer().set(GENERATOR_KEY, PersistentDataType.BYTE, (byte) 1);
+            // Zapisujemy ID stoniarki (np. "stoniarka-zwykla") bezpiecznie w NBT przedmiotu
+            meta.getPersistentDataContainer().set(GENERATOR_ID_KEY, PersistentDataType.STRING, generatorId);
 
             item.setItemMeta(meta);
         }

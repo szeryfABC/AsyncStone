@@ -1,6 +1,10 @@
 default-generator:
   id: END_STONE
   name: "&e&lStone Generator!"
+  # Description of the item (Lore)
+  lore:
+    - "&7Place this block on the ground"
+    - "&7to start generating stone."
   # Generation mode:
   # 'above'   - Spawns generated blocks one block above the generator.
   # 'replace' - Spawns generated blocks exactly at the generator's location.
@@ -13,6 +17,14 @@ default-generator:
   blocks:
     - "STONE:90.0"
     - "COBBLESTONE:10.0"
+  recipe:
+    shape:
+      - "SSS"
+      - "SRS"
+      - "SSS"
+    ingredients:
+      - "S:STONE"
+      - "R:REDSTONE"
   upgrade:
     gen: stoniarka-poziom2
     cost:
@@ -21,7 +33,10 @@ default-generator:
 
 stoniarka-poziom2:
   id: OBSIDIAN
-  name: "&e&lStone Generator! [Level 2]"
+  name: "&e&lStone Generator! &7[&cLevel 2&7]"
+  lore:
+    - "&7Upgraded generator."
+    - "&7Generates ores much faster!"
   type: above
   cooldown: 20 # Faster!
   blocks: # More!
