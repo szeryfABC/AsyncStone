@@ -19,21 +19,34 @@ import java.util.stream.Collectors;
 public enum Config {
     MAIN_PREFIX("main.variables_prefix", "&aAsyncStone &f| ", true),
 
-    GENERATOR_ITEM_MATERIAL("generator.item.material", "END_STONE"),
-    GENERATOR_ITEM_NAME("generator.item.name", "&e&lStoniarka", true),
-    GENERATOR_ITEM_LORE("generator.item.lore", Arrays.asList(
-            "&7Postaw ten blok, aby",
-            "&7rozpocząć generowanie kamienia."
+    GUI_TITLE("gui.title", "&8Generator Menu", true),
+    GUI_SIZE("gui.size", 27),
+
+    GUI_UPGRADE_SLOT("gui.upgrade.slot", 11),
+    GUI_UPGRADE_MATERIAL("gui.upgrade.material", "GOLD_INGOT"),
+    GUI_UPGRADE_NAME("gui.upgrade.name", "&e&lUpgrade Generator", true),
+    GUI_UPGRADE_LORE("gui.upgrade.lore", Arrays.asList(
+            "&7Click here to upgrade this",
+            "&7generator to the next level!",
+            "",
+            "&7Cost: &f<cost>"
     ), true),
-    GENERATOR_RECIPE_SHAPE("generator.recipe.shape", Arrays.asList(
-            "SSS",
-            "SRS",
-            "SSS"
-    )),
-    GENERATOR_RECIPE_INGREDIENTS("generator.recipe.ingredients", Arrays.asList(
-            "S:STONE",
-            "R:REDSTONE"
-    ))
+
+    GUI_MAX_SLOT("gui.max_level.slot", 11),
+    GUI_MAX_MATERIAL("gui.max_level.material", "BARRIER"),
+    GUI_MAX_NAME("gui.max_level.name", "&c&lMax Level", true),
+    GUI_MAX_LORE("gui.max_level.lore", Arrays.asList(
+            "&7This generator has reached",
+            "&7its maximum level."
+    ), true),
+
+    GUI_PICKUP_SLOT("gui.pickup.slot", 15),
+    GUI_PICKUP_MATERIAL("gui.pickup.material", "BEDROCK"),
+    GUI_PICKUP_NAME("gui.pickup.name", "&c&lPick Up", true),
+    GUI_PICKUP_LORE("gui.pickup.lore", Arrays.asList(
+            "&7Click here to safely",
+            "&7pick up this generator."
+    ), true)
 
     ;
 

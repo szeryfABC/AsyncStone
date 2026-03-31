@@ -12,6 +12,8 @@ import me.lemurxd.asyncstone.records.ChunkKey;
 import me.lemurxd.asyncstone.utils.Config;
 import me.lemurxd.asyncstone.utils.DatabaseManager;
 import me.lemurxd.asyncstone.utils.RecipeManager;
+import net.milkbowl.vault.economy.Economy;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -25,12 +27,13 @@ public class AsyncStone extends JavaPlugin {
     private GeneratorsConfig generatorsConfig;
     private DatabaseManager databaseManager;
     private BlockGenerationEngine  generationEngine;
+    private Economy econ = null;
 
     @Override
     public void onEnable() {
         instance = this;
 
-        new AsyncSaveTask(cacheManager, databaseManager).runTaskTimerAsynchronously(this, 200L, 200L);
+        new AsyncSaveTask(cacheManager, databaseManager).runTaskTimerAsynchronously(this, 6000L, 6000L);
 
         this.cacheManager = new StoneCacheManager();
         this.recipeManager = new RecipeManager(this);
@@ -58,6 +61,22 @@ public class AsyncStone extends JavaPlugin {
 
         databaseManager.close();
         getLogger().info("AsyncStone off.");
+    }
+
+    private boolean setupEconomy() {
+        if (getServer().getPluginManager().getPlugin("Vault") == null) {
+            return false;
+        }
+        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        if (rsp == null) {
+            return false;
+        }
+        econ = rsp.getProvider();
+        return econ != null;
+    }
+
+    public Economy getEconomy() {
+        return econ;
     }
 
 

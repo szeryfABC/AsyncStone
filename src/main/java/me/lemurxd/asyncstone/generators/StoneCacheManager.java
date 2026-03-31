@@ -51,16 +51,13 @@ public class StoneCacheManager {
     }
 
     public void removeGenerator(Location loc) {
-        ChunkKey key = Chunk.getKey(loc);
+        ChunkKey key = new ChunkKey(loc.getWorld().getUID(), loc.getBlockX() >> 4, loc.getBlockZ() >> 4);
         Map<Location, StoneGenerator> chunkGenerators = cache.get(key);
 
         if (chunkGenerators != null) {
             chunkGenerators.remove(loc);
-            dirtyChunks.add(key);
 
-            if (chunkGenerators.isEmpty()) {
-                cache.remove(key);
-            }
+            dirtyChunks.add(key);
         }
     }
 
