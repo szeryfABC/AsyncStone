@@ -2,25 +2,37 @@ package me.lemurxd.asyncstone;
 
 import me.lemurxd.asyncstone.commands.AsyncStoneCommand;
 import me.lemurxd.asyncstone.generators.StoneCacheManager;
+import me.lemurxd.asyncstone.generators.StoneGenerator;
+import me.lemurxd.asyncstone.generators.settings.GeneratorsConfig;
+import me.lemurxd.asyncstone.listeners.ChunkLoadListener;
 import me.lemurxd.asyncstone.listeners.GeneratorPlaceEvent;
+import me.lemurxd.asyncstone.records.ChunkKey;
 import me.lemurxd.asyncstone.utils.Config;
+import me.lemurxd.asyncstone.utils.DatabaseManager;
 import me.lemurxd.asyncstone.utils.RecipeManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.Collection;
 
 public class AsyncStone extends JavaPlugin {
 
     private static AsyncStone instance;
     private StoneCacheManager cacheManager;
     private RecipeManager recipeManager;
+    private GeneratorsConfig generatorsConfig;
+    private DatabaseManager databaseManager;
 
     @Override
     public void onEnable() {
         instance = this;
 
+        new AsyncSaveTask(cacheManager, databaseManager).runTaskTimerAsynchronously(this, 200L, 200L);
+
         cacheManager = new StoneCacheManager();
         recipeManager = new RecipeManager(this);
+        this.generatorsConfig = new GeneratorsConfig(this);
+        this.databaseManager = new DatabaseManager(this);
 
         loadConfiguration();
 
@@ -34,6 +46,13 @@ public class AsyncStone extends JavaPlugin {
 
     @Override
     public void onDisable() {
+
+        for (ChunkKey key : cacheManager.getDirtyChunks()) {
+            Collection<StoneGenerator> data = cacheManager.getGeneratorsInChunk(key);
+            databaseManager.saveChunkAsync(key.uuid(), key.x(), key.z(), data);
+        }
+
+        databaseManager.close();
         getLogger().info("AsyncStone off.");
     }
 
@@ -41,6 +60,8 @@ public class AsyncStone extends JavaPlugin {
     private void loadConfiguration() {
         File configFile = new File(getDataFolder(), "config.yml");
         Config.load(configFile);
+
+        generatorsConfig.load();
     }
 
     public void softReload() {
@@ -52,6 +73,7 @@ public class AsyncStone extends JavaPlugin {
 
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(new GeneratorPlaceEvent(cacheManager), this);
+        getServer().getPluginManager().registerEvents(new ChunkLoadListener(cacheManager, databaseManager), this);
     }
 
     private void registerCommands() {
