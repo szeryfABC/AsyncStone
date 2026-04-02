@@ -1,6 +1,6 @@
 package me.lemurxd.asyncstone.generators;
 
-import de.tr7zw.nbtapi.NBTItem;
+import de.tr7zw.changeme.nbtapi.NBTItem;
 import me.lemurxd.asyncstone.AsyncStone;
 import me.lemurxd.asyncstone.generators.settings.GeneratorSettings;
 import org.bukkit.ChatColor;

@@ -8,6 +8,7 @@ import me.lemurxd.asyncstone.generators.settings.GeneratorsConfig;
 import me.lemurxd.asyncstone.listeners.ChunkLoadListener;
 import me.lemurxd.asyncstone.listeners.GeneratorBreakEvent;
 import me.lemurxd.asyncstone.listeners.GeneratorPlaceEvent;
+import me.lemurxd.asyncstone.listeners.GeneratorProtectionListener;
 import me.lemurxd.asyncstone.listeners.gui.GeneratorInteractEvent;
 import me.lemurxd.asyncstone.listeners.gui.GeneratorMenuListener;
 import me.lemurxd.asyncstone.records.ChunkKey;
@@ -106,6 +107,7 @@ public class AsyncStone extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ChunkLoadListener(cacheManager, databaseManager), this);
         getServer().getPluginManager().registerEvents(new GeneratorInteractEvent(cacheManager), this);
         getServer().getPluginManager().registerEvents(new GeneratorMenuListener(instance, cacheManager), this);
+        getServer().getPluginManager().registerEvents(new GeneratorProtectionListener(cacheManager), this);
     }
 
     private void registerCommands() {

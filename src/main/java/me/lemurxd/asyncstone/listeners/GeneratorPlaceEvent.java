@@ -1,6 +1,6 @@
 package me.lemurxd.asyncstone.listeners;
 
-import de.tr7zw.nbtapi.NBTItem;
+import de.tr7zw.changeme.nbtapi.NBTItem;
 import me.lemurxd.asyncstone.AsyncStone;
 import me.lemurxd.asyncstone.generators.BlockGenerationEngine;
 import me.lemurxd.asyncstone.generators.StoneCacheManager;

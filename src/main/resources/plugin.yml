@@ -4,6 +4,7 @@ main: me.lemurxd.asyncstone.AsyncStone
 api-version: 1.21
 author: lemurxd_
 description: Blazing-fast stone generator.
+depend: [Vault]
 commands:
   asyncstone:
     description: Main command for AsyncStone plugin.
