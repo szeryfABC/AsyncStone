@@ -1,18 +1,15 @@
 package me.lemurxd.asyncstone.commands;
 
 import me.lemurxd.asyncstone.AsyncStone;
+import me.lemurxd.asyncstone.generators.StoneGeneratorItem;
 import me.lemurxd.asyncstone.generators.settings.GeneratorSettings;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,18 +77,15 @@ public class AsyncStoneCommand implements CommandExecutor, TabCompleter {
                     }
                 }
 
-                ItemStack item = new ItemStack(settings.getMaterial(), amount);
-                ItemMeta meta = item.getItemMeta();
-                if (meta != null) {
-                    meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', settings.getName()));
+                ItemStack item = StoneGeneratorItem.create(generatorId);
 
-                    NamespacedKey key = new NamespacedKey(plugin, "generator_id");
-                    meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, generatorId);
+                if (item != null) {
+                    item.setAmount(amount);
 
-                    item.setItemMeta(meta);
+                    target.getInventory().addItem(item);
+                } else {
+                    sender.sendMessage("§a[AsyncStone] brak generatora o takim id");
                 }
-
-                target.getInventory().addItem(item);
                 sender.sendMessage("§a[AsyncStone] Pomyslnie nadano " + amount + "x stoniarka (" + generatorId + ") graczowi " + target.getName() + ".");
                 target.sendMessage("§aOtrzymales " + amount + "x stoniarka!");
                 break;

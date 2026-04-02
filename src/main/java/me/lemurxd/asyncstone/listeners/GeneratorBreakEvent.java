@@ -7,6 +7,7 @@ import me.lemurxd.asyncstone.generators.StoneGenerator;
 import me.lemurxd.asyncstone.generators.StoneGeneratorItem;
 import me.lemurxd.asyncstone.generators.settings.GeneratorSettings;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -38,11 +39,9 @@ public class GeneratorBreakEvent implements Listener {
             if (settings == null) return;
 
             if (settings.getType() == GeneratorSettings.Type.REPLACE) {
-
                 if (event.getPlayer().isSneaking()) {
                     destroyGenerator(event, generatorAtLoc, loc);
                 } else {
-
                     generationEngine.triggerGeneration(generatorAtLoc);
                 }
             } else {
@@ -69,7 +68,10 @@ public class GeneratorBreakEvent implements Listener {
         ItemStack itemToDrop = StoneGeneratorItem.create(generator.getId());
 
         if (itemToDrop != null) {
-            event.setDropItems(false);
+            event.setCancelled(true);
+
+            loc.getBlock().setType(Material.AIR);
+
             loc.getWorld().dropItemNaturally(loc, itemToDrop);
         }
 

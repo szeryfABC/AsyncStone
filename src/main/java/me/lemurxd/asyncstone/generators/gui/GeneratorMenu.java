@@ -24,7 +24,7 @@ public class GeneratorMenu implements InventoryHolder {
     public GeneratorMenu(Player player, StoneGenerator generator) {
         this.generator = generator;
 
-        String title = Config.GUI_TITLE.getString();
+        String title = Config.GUI_TITLE.getLegacyString();
         int size = Config.GUI_SIZE.getInt();
 
         this.inventory = Bukkit.createInventory(this, size, ChatColor.translateAlternateColorCodes('&', title));
@@ -39,26 +39,26 @@ public class GeneratorMenu implements InventoryHolder {
 
         if (settings.getUpgradeData() != null) {
             ItemStack upgradeItem = buildItem(
-                    Config.GUI_UPGRADE_MATERIAL.getString(),
-                    Config.GUI_UPGRADE_NAME.getString(),
-                    Config.GUI_UPGRADE_LORE.getStringList(),
+                    Config.GUI_UPGRADE_MATERIAL.getLegacyString(),
+                    Config.GUI_UPGRADE_NAME.getLegacyString(),
+                    Config.GUI_UPGRADE_LORE.getLegacyStringList(),
                     formatCost(settings.getUpgradeData().costs())
             );
             inventory.setItem(Config.GUI_UPGRADE_SLOT.getInt(), upgradeItem);
         } else {
             ItemStack maxItem = buildItem(
-                    Config.GUI_MAX_MATERIAL.getString(),
-                    Config.GUI_MAX_NAME.getString(),
-                    Config.GUI_MAX_LORE.getStringList(),
+                    Config.GUI_MAX_MATERIAL.getLegacyString(),
+                    Config.GUI_MAX_NAME.getLegacyString(),
+                    Config.GUI_MAX_LORE.getLegacyStringList(),
                     null
             );
             inventory.setItem(Config.GUI_MAX_SLOT.getInt(), maxItem);
         }
 
         ItemStack pickupItem = buildItem(
-                Config.GUI_PICKUP_MATERIAL.getString(),
-                Config.GUI_PICKUP_NAME.getString(),
-                Config.GUI_PICKUP_LORE.getStringList(),
+                Config.GUI_PICKUP_MATERIAL.getLegacyString(),
+                Config.GUI_PICKUP_NAME.getLegacyString(),
+                Config.GUI_PICKUP_LORE.getLegacyStringList(),
                 null
         );
         inventory.setItem(Config.GUI_PICKUP_SLOT.getInt(), pickupItem);

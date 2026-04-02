@@ -1,17 +1,17 @@
 package me.lemurxd.asyncstone.listeners;
 
+import de.tr7zw.nbtapi.NBTItem;
 import me.lemurxd.asyncstone.AsyncStone;
 import me.lemurxd.asyncstone.generators.BlockGenerationEngine;
 import me.lemurxd.asyncstone.generators.StoneCacheManager;
 import me.lemurxd.asyncstone.generators.StoneGenerator;
 import me.lemurxd.asyncstone.generators.StoneGeneratorItem;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 
 public class GeneratorPlaceEvent implements Listener {
 
@@ -28,13 +28,14 @@ public class GeneratorPlaceEvent implements Listener {
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
         ItemStack itemInHand = event.getItemInHand();
-        ItemMeta meta = itemInHand.getItemMeta();
 
-        if (meta == null) return;
+        if (itemInHand == null || itemInHand.getType() == Material.AIR) return;
 
-        if (meta.getPersistentDataContainer().has(StoneGeneratorItem.GENERATOR_ID_KEY, PersistentDataType.STRING)) {
+        NBTItem nbtItem = new NBTItem(itemInHand);
 
-            String generatorId = meta.getPersistentDataContainer().get(StoneGeneratorItem.GENERATOR_ID_KEY, PersistentDataType.STRING);
+        if (nbtItem.hasTag(StoneGeneratorItem.GENERATOR_ID_KEY)) {
+
+            String generatorId = nbtItem.getString(StoneGeneratorItem.GENERATOR_ID_KEY);
             Location placedLoc = event.getBlockPlaced().getLocation();
 
             StoneGenerator generator = new StoneGenerator(placedLoc, generatorId);
