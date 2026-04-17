@@ -20,13 +20,13 @@ public class GeneratorSettings {
     private final String id;
     private final Material material;
     private final String name;
-    private final List<String> lore; // NOWE
+    private final List<String> lore;
     private final Type type;
     private final int cooldown;
     private final List<DropEntry> drops;
     private final UpgradeData upgradeData;
-    private final List<String> recipeShape; // NOWE
-    private final List<String> recipeIngredients; // NOWE
+    private final List<String> recipeShape;
+    private final List<String> recipeIngredients;
 
     public GeneratorSettings(String id, Material material, String name, List<String> lore, Type type, int cooldown, List<DropEntry> drops, UpgradeData upgradeData, List<String> recipeShape, List<String> recipeIngredients) {
         this.id = id;
@@ -47,11 +47,11 @@ public class GeneratorSettings {
     public String getId() { return id; }
     public Material getMaterial() { return material; }
     public String getName() { return name; }
-    public List<String> getLore() { return lore; } // NOWE
+    public List<String> getLore() { return lore; }
     public Type getType() { return type; }
     public int getCooldown() { return cooldown; }
     public List<DropEntry> getDrops() { return drops; }
     public UpgradeData getUpgradeData() { return upgradeData; }
-    public List<String> getRecipeShape() { return recipeShape; } // NOWE
-    public List<String> getRecipeIngredients() { return recipeIngredients; } // NOWE
+    public List<String> getRecipeShape() { return recipeShape; }
+    public List<String> getRecipeIngredients() { return recipeIngredients; }
 }

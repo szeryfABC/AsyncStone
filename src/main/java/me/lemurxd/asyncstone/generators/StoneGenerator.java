@@ -7,10 +7,9 @@ import java.util.Objects;
 public class StoneGenerator {
 
     private final Location location;
-    private final String id; // Klucz z generators.yml (np. "stoniarka-zwykla")
+    private final String id;
 
     public StoneGenerator(Location location, String id) {
-        // Normalizacja lokacji do pełnego bloku
         this.location = new Location(
                 location.getWorld(),
                 location.getBlockX(),

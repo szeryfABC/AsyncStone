@@ -31,7 +31,6 @@ public class GeneratorProtectionListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPistonExtend(BlockPistonExtendEvent event) {
         for (Block block : event.getBlocks()) {
-            // Jeśli tłok próbuje popchnąć stoniarkę, anulujemy całe przesunięcie
             if (cacheManager.isStoneGenerator(block.getLocation())) {
                 event.setCancelled(true);
                 return;
