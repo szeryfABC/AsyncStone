@@ -4,6 +4,7 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import me.lemurxd.asyncstone.AsyncStone;
 import me.lemurxd.asyncstone.generators.StoneGenerator;
+import me.lemurxd.asyncstone.records.ChunkKey;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 
@@ -43,6 +44,44 @@ public class DatabaseManager {
                     "PRIMARY KEY (world, chunk_x, chunk_z))");
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void saveChunksBatch(Map<ChunkKey, Collection<StoneGenerator>> dataToSave) {
+        if (dataToSave == null || dataToSave.isEmpty()) return;
+
+        String sql = "INSERT OR REPLACE INTO stone_chunks (world, chunk_x, chunk_z, data) VALUES (?, ?, ?, ?)";
+
+        try {
+            connection.setAutoCommit(false);
+
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                for (Map.Entry<ChunkKey, Collection<StoneGenerator>> entry : dataToSave.entrySet()) {
+                    ChunkKey key = entry.getKey();
+                    String json = gson.toJson(serializeGenerators(entry.getValue()));
+
+                    ps.setString(1, key.uuid().toString());
+                    ps.setInt(2, key.x());
+                    ps.setInt(3, key.z());
+                    ps.setString(4, json);
+
+                    ps.addBatch();
+                }
+
+                ps.executeBatch();
+                connection.commit();
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Blad podczas masowego zapisu stoniarek do bazy: " + e.getMessage());
+            try {
+                if (connection != null) connection.rollback();
+            } catch (SQLException rollbackEx) {
+                rollbackEx.printStackTrace();
+            }
+        } finally {
+            try {
+                if (connection != null) connection.setAutoCommit(true);
+            } catch (SQLException ignored) {}
         }
     }
 

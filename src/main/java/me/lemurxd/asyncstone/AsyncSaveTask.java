@@ -6,9 +6,7 @@ import me.lemurxd.asyncstone.records.ChunkKey;
 import me.lemurxd.asyncstone.utils.DatabaseManager;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 public class AsyncSaveTask extends BukkitRunnable {
 
@@ -28,19 +26,20 @@ public class AsyncSaveTask extends BukkitRunnable {
             return;
         }
 
+        Map<ChunkKey, Collection<StoneGenerator>> batchToSave = new HashMap<>();
         Iterator<ChunkKey> iterator = dirtyChunks.iterator();
-        int savedCount = 0;
 
         while (iterator.hasNext()) {
             ChunkKey key = iterator.next();
-
             Collection<StoneGenerator> generators = cacheManager.getGeneratorsInChunk(key);
 
-            databaseManager.saveChunkAsync(key.uuid(), key.x(), key.z(), generators);
+            batchToSave.put(key, generators != null ? generators : new ArrayList<>());
 
             iterator.remove();
-            savedCount++;
         }
 
+        if (!batchToSave.isEmpty()) {
+            databaseManager.saveChunksBatch(batchToSave);
+        }
     }
 }
