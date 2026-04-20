@@ -36,6 +36,10 @@ public class AsyncStone extends JavaPlugin {
     public void onEnable() {
         instance = this;
 
+        if (!setupEconomy()) {
+            System.err.println("[AsyncStone] Economy setup failed!");
+        }
+
         new AsyncSaveTask(cacheManager, databaseManager).runTaskTimerAsynchronously(this, 6000L, 6000L);
 
         this.cacheManager = new StoneCacheManager();
