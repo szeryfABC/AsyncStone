@@ -21,6 +21,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AsyncStone extends JavaPlugin {
 
@@ -40,8 +42,6 @@ public class AsyncStone extends JavaPlugin {
             System.err.println("[AsyncStone] Economy setup failed!");
         }
 
-        new AsyncSaveTask(cacheManager, databaseManager).runTaskTimerAsynchronously(this, 6000L, 6000L);
-
         this.cacheManager = new StoneCacheManager();
         this.recipeManager = new RecipeManager(this);
         this.generatorsConfig = new GeneratorsConfig(this);
@@ -55,18 +55,29 @@ public class AsyncStone extends JavaPlugin {
         registerListeners();
         registerCommands();
 
+        new AsyncSaveTask(cacheManager, databaseManager).runTaskTimerAsynchronously(this, 6000L, 6000L);
+
         getLogger().info("AsyncStone on!");
     }
 
     @Override
     public void onDisable() {
+        Map<ChunkKey, Collection<StoneGenerator>> dataToSave = new HashMap<>();
 
         for (ChunkKey key : cacheManager.getDirtyChunks()) {
             Collection<StoneGenerator> data = cacheManager.getGeneratorsInChunk(key);
-            databaseManager.saveChunkAsync(key.uuid(), key.x(), key.z(), data);
+            if (data != null) {
+                dataToSave.put(key, data);
+            }
+        }
+
+        if (!dataToSave.isEmpty()) {
+            getLogger().info("Zapisywanie " + dataToSave.size() + " chunków ze stoniarkami do bazy...");
+            databaseManager.saveChunksBatch(dataToSave);
         }
 
         databaseManager.close();
+
         getLogger().info("AsyncStone off.");
     }
 
