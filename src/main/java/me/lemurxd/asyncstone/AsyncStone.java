@@ -100,7 +100,12 @@ public class AsyncStone extends JavaPlugin {
 
     private void loadConfiguration() {
         File configFile = new File(getDataFolder(), "config.yml");
-        Config.load(configFile);
+
+        try {
+            Config.load(configFile);
+        } catch (Exception e) {
+            getComponentLogger().error("Cannot load main config", e);
+        }
 
         generatorsConfig.load();
     }

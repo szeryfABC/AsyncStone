@@ -48,7 +48,7 @@ public enum Config {
     private String text;
     private int number;
     private boolean bool;
-    private boolean colored;
+    private boolean colored = false;
     private Class<?> type;
 
     public static final boolean HAS_ADVENTURE;
