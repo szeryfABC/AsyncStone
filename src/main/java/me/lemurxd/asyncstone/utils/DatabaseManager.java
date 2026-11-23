@@ -1,54 +1,80 @@
 package me.lemurxd.asyncstone.utils;
 
-import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
-import me.lemurxd.asyncstone.AsyncStone;
+import com.google.gson.reflect.TypeToken;
 import me.lemurxd.asyncstone.generators.StoneGenerator;
 import me.lemurxd.asyncstone.records.ChunkKey;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 
 import java.io.File;
+import java.lang.reflect.Type;
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+// All methods are synchronized: the save task (async thread) and onDisable (main thread) share one connection.
 public class DatabaseManager {
 
-    private final AsyncStone plugin;
-    private Connection connection;
+    private static final Type ROWS_TYPE = new TypeToken<List<Map<String, Object>>>(){}.getType();
+
+    private final File file;
+    private final Logger logger;
     private final Gson gson = new Gson();
+    private Connection connection;
 
-    public DatabaseManager(AsyncStone plugin) {
-        this.plugin = plugin;
+    public DatabaseManager(File file, Logger logger) {
+        this.file = file;
+        this.logger = logger;
     }
 
-    public void connect() {
-        File dataFolder = new File(plugin.getDataFolder(), "data.db");
+    public synchronized void connect() {
         try {
+            file.getParentFile().mkdirs();
             Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:" + dataFolder.getAbsolutePath());
-            createTable();
+            connection = DriverManager.getConnection("jdbc:sqlite:" + file.getAbsolutePath());
+            try (Statement statement = connection.createStatement()) {
+                statement.execute("CREATE TABLE IF NOT EXISTS stone_chunks (" +
+                        "world TEXT, " +
+                        "chunk_x INTEGER, " +
+                        "chunk_z INTEGER, " +
+                        "data TEXT, " +
+                        "PRIMARY KEY (world, chunk_x, chunk_z))");
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Cannot open database " + file + ". Generators will NOT be saved!", e);
         }
     }
 
-    private void createTable() {
-        try (Statement statement = connection.createStatement()) {
-            statement.execute("CREATE TABLE IF NOT EXISTS stone_chunks (" +
-                    "world TEXT, " +
-                    "chunk_x INTEGER, " +
-                    "chunk_z INTEGER, " +
-                    "data TEXT, " +
-                    "PRIMARY KEY (world, chunk_x, chunk_z))");
+    // One query per world instead of one per chunk; uses the primary key prefix (world).
+    public synchronized Map<ChunkKey, List<StoneGenerator>> loadWorld(World world) {
+        Map<ChunkKey, List<StoneGenerator>> result = new HashMap<>();
+        if (connection == null) return result;
+
+        UUID worldUuid = world.getUID();
+        String sql = "SELECT chunk_x, chunk_z, data FROM stone_chunks WHERE world = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, worldUuid.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    List<StoneGenerator> generators = deserializeGenerators(world, rs.getString("data"));
+                    if (!generators.isEmpty()) {
+                        result.put(new ChunkKey(worldUuid, rs.getInt("chunk_x"), rs.getInt("chunk_z")), generators);
+                    }
+                }
+            }
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Failed to load generators for world " + world.getName(), e);
         }
+        return result;
     }
 
-    public void saveChunksBatch(Map<ChunkKey, Collection<StoneGenerator>> dataToSave) {
-        if (dataToSave == null || dataToSave.isEmpty()) return;
+    // Returns false when nothing was saved, so the caller can retry later.
+    public synchronized boolean saveChunksBatch(Map<ChunkKey, ? extends Collection<StoneGenerator>> dataToSave) {
+        if (dataToSave.isEmpty()) return true;
+        if (connection == null) return false;
 
         String sql = "INSERT OR REPLACE INTO stone_chunks (world, chunk_x, chunk_z, data) VALUES (?, ?, ?, ?)";
 
@@ -56,72 +82,32 @@ public class DatabaseManager {
             connection.setAutoCommit(false);
 
             try (PreparedStatement ps = connection.prepareStatement(sql)) {
-                for (Map.Entry<ChunkKey, Collection<StoneGenerator>> entry : dataToSave.entrySet()) {
+                for (Map.Entry<ChunkKey, ? extends Collection<StoneGenerator>> entry : dataToSave.entrySet()) {
                     ChunkKey key = entry.getKey();
-                    String json = gson.toJson(serializeGenerators(entry.getValue()));
 
                     ps.setString(1, key.uuid().toString());
                     ps.setInt(2, key.x());
                     ps.setInt(3, key.z());
-                    ps.setString(4, json);
-
+                    ps.setString(4, gson.toJson(serializeGenerators(entry.getValue())));
                     ps.addBatch();
                 }
-
                 ps.executeBatch();
-                connection.commit();
             }
+            connection.commit();
+            return true;
         } catch (SQLException e) {
-            plugin.getLogger().severe("Blad podczas masowego zapisu stoniarek do bazy: " + e.getMessage());
+            logger.log(Level.SEVERE, "Failed to save generators to the database", e);
             try {
-                if (connection != null) connection.rollback();
+                connection.rollback();
             } catch (SQLException rollbackEx) {
-                rollbackEx.printStackTrace();
+                logger.log(Level.SEVERE, "Rollback failed", rollbackEx);
             }
+            return false;
         } finally {
             try {
-                if (connection != null) connection.setAutoCommit(true);
+                connection.setAutoCommit(true);
             } catch (SQLException ignored) {}
         }
-    }
-
-
-    public void saveChunkAsync(UUID worldUuid, int cx, int cz, Collection<StoneGenerator> generators) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            String json = gson.toJson(serializeGenerators(generators));
-
-            String sql = "INSERT OR REPLACE INTO stone_chunks (world, chunk_x, chunk_z, data) VALUES (?, ?, ?, ?)";
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
-                ps.setString(1, worldUuid.toString());
-                ps.setInt(2, cx);
-                ps.setInt(3, cz);
-                ps.setString(4, json);
-                ps.executeUpdate();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
-
-    public CompletableFuture<List<StoneGenerator>> loadChunkAsync(UUID worldUuid, int cx, int cz) {
-        return CompletableFuture.supplyAsync(() -> {
-            String sql = "SELECT data FROM stone_chunks WHERE world = ? AND chunk_x = ? AND chunk_z = ?";
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
-                ps.setString(1, worldUuid.toString());
-                ps.setInt(2, cx);
-                ps.setInt(3, cz);
-                ResultSet rs = ps.executeQuery();
-
-                if (rs.next()) {
-                    String json = rs.getString("data");
-                    return deserializeGenerators(worldUuid, json);
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-            return new ArrayList<>();
-        });
     }
 
     private List<Map<String, Object>> serializeGenerators(Collection<StoneGenerator> generators) {
@@ -137,35 +123,27 @@ public class DatabaseManager {
         return list;
     }
 
-    private List<StoneGenerator> deserializeGenerators(UUID worldUuid, String json) {
-        List<Map<String, Object>> data = gson.fromJson(json, new TypeToken<List<Map<String, Object>>>(){}.getType());
+    private List<StoneGenerator> deserializeGenerators(World world, String json) {
+        List<Map<String, Object>> data = gson.fromJson(json, ROWS_TYPE);
         List<StoneGenerator> list = new ArrayList<>();
-
         if (data == null) return list;
-
-        org.bukkit.World world = Bukkit.getWorld(worldUuid);
-
-        if (world == null) {
-            plugin.getLogger().warning("Probowano zaladowac stoniarki dla usunietego swiata (UUID: " + worldUuid + ")");
-            return list;
-        }
 
         for (Map<String, Object> map : data) {
             Location loc = new Location(world,
-                    ((Double)map.get("x")).intValue(),
-                    ((Double)map.get("y")).intValue(),
-                    ((Double)map.get("z")).intValue());
+                    ((Number) map.get("x")).intValue(),
+                    ((Number) map.get("y")).intValue(),
+                    ((Number) map.get("z")).intValue());
 
-            list.add(new StoneGenerator(loc, (String)map.get("id")));
+            list.add(new StoneGenerator(loc, (String) map.get("id")));
         }
         return list;
     }
 
-    public void close() {
+    public synchronized void close() {
         try {
             if (connection != null && !connection.isClosed()) connection.close();
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Failed to close the database", e);
         }
     }
 }

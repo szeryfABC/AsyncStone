@@ -89,14 +89,15 @@ public class GeneratorMenu implements InventoryHolder {
     }
 
     private String formatCost(List<GeneratorSettings.UpgradeCost> costs) {
-        if (costs.isEmpty()) return "Free";
+        if (costs.isEmpty()) return Config.GUI_COST_FREE.getLegacyString();
 
         List<String> costStrings = new ArrayList<>();
         for (GeneratorSettings.UpgradeCost cost : costs) {
+            String amount = String.valueOf(cost.amount());
             if (cost.type().equalsIgnoreCase("money")) {
-                costStrings.add("$" + cost.amount());
+                costStrings.add(Config.GUI_COST_MONEY.getLegacyString().replace("<amount>", amount));
             } else if (cost.type().equalsIgnoreCase("item")) {
-                costStrings.add(cost.amount() + "x " + cost.value());
+                costStrings.add(Config.GUI_COST_ITEM.getLegacyString().replace("<amount>", amount).replace("<item>", cost.value()));
             }
         }
         return String.join(", ", costStrings);

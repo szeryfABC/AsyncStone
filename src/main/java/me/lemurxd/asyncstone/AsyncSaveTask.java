@@ -18,8 +18,9 @@ public class AsyncSaveTask extends BukkitRunnable {
         this.databaseManager = databaseManager;
     }
 
+    // synchronized: onDisable calls run() too, while the timer run may still be mid-save.
     @Override
-    public void run() {
+    public synchronized void run() {
         Set<ChunkKey> dirtyChunks = cacheManager.getDirtyChunks();
 
         if (dirtyChunks.isEmpty()) {
@@ -31,15 +32,12 @@ public class AsyncSaveTask extends BukkitRunnable {
 
         while (iterator.hasNext()) {
             ChunkKey key = iterator.next();
-            Collection<StoneGenerator> generators = cacheManager.getGeneratorsInChunk(key);
-
-            batchToSave.put(key, generators != null ? generators : new ArrayList<>());
-
+            batchToSave.put(key, cacheManager.getGeneratorsInChunk(key));
             iterator.remove();
         }
 
-        if (!batchToSave.isEmpty()) {
-            databaseManager.saveChunksBatch(batchToSave);
+        if (!databaseManager.saveChunksBatch(batchToSave)) {
+            dirtyChunks.addAll(batchToSave.keySet());
         }
     }
 }

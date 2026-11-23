@@ -2,7 +2,7 @@ package me.lemurxd.asyncstone.commands;
 
 import me.lemurxd.asyncstone.AsyncStone;
 import me.lemurxd.asyncstone.generators.StoneGeneratorItem;
-import me.lemurxd.asyncstone.generators.settings.GeneratorSettings;
+import me.lemurxd.asyncstone.utils.Config;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -26,89 +26,70 @@ public class AsyncStoneCommand implements CommandExecutor, TabCompleter {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
         if (args.length == 0) {
-            sender.sendMessage("§8§m----------------------------------------");
-            sender.sendMessage("§e§lAsyncStone §7v" + plugin.getDescription().getVersion());
-            sender.sendMessage("§7Author: §elemurxd_");
-            sender.sendMessage("§7GitHub: §bhttps://github.com/lemurxd_");
-            sender.sendMessage("§8§m----------------------------------------");
+            String version = plugin.getPluginMeta().getVersion();
+            Config.MSG_INFO.getLegacyStringList().forEach(line -> sender.sendMessage(line.replace("<version>", version)));
             return true;
         }
 
         if (!sender.hasPermission("asyncstone.admin")) {
-            sender.sendMessage("§cYou don't have permission to do that!");
+            sender.sendMessage(Config.MSG_NO_PERMISSION.getLegacyString());
             return true;
         }
 
-        String subCommand = args[0].toLowerCase();
-
-        switch (subCommand) {
-            case "reload":
+        switch (args[0].toLowerCase()) {
+            case "reload" -> {
                 plugin.softReload();
-                sender.sendMessage("§a[AsyncStone] Konfiguracja i receptury zostaly przeladowane!");
-                break;
-
-            case "give":
-                if (args.length < 3) {
-                    sender.sendMessage("§cPoprawne uzycie: /asyncstone give <nick> <id_stoniarki> [ilosc]");
-                    break;
-                }
-
-                Player target = Bukkit.getPlayer(args[1]);
-                if (target == null) {
-                    sender.sendMessage("§cGracz o nicku " + args[1] + " nie jest online!");
-                    break;
-                }
-
-                String generatorId = args[2];
-                GeneratorSettings settings = plugin.getGeneratorsConfig().getSettings(generatorId);
-                if (settings == null) {
-                    sender.sendMessage("§cStoniarka o ID '" + generatorId + "' nie istnieje w pliku generators.yml!");
-                    break;
-                }
-
-                int amount = 1;
-                if (args.length >= 4) {
-                    try {
-                        amount = Integer.parseInt(args[3]);
-                        if (amount <= 0) amount = 1;
-                    } catch (NumberFormatException e) {
-                        sender.sendMessage("§cIlosc musi byc liczba!");
-                        break;
-                    }
-                }
-
-                ItemStack item = StoneGeneratorItem.create(generatorId);
-
-                if (item != null) {
-                    item.setAmount(amount);
-
-                    target.getInventory().addItem(item);
-                } else {
-                    sender.sendMessage("§a[AsyncStone] brak generatora o takim id");
-                }
-                sender.sendMessage("§a[AsyncStone] Pomyslnie nadano " + amount + "x stoniarka (" + generatorId + ") graczowi " + target.getName() + ".");
-                target.sendMessage("§aOtrzymales " + amount + "x stoniarka!");
-                break;
-
-            case "help":
-                sendHelpMenu(sender);
-                break;
-
-            default:
-                sender.sendMessage("§cNieznana komenda. Wpisz §e/asyncstone help §caby wyswietlic liste.");
-                break;
+                sender.sendMessage(Config.MSG_RELOADED.getLegacyString());
+            }
+            case "give" -> give(sender, args);
+            case "help" -> Config.MSG_HELP.getLegacyStringList().forEach(sender::sendMessage);
+            default -> sender.sendMessage(Config.MSG_UNKNOWN_COMMAND.getLegacyString());
         }
 
         return true;
     }
 
-    private void sendHelpMenu(CommandSender sender) {
-        sender.sendMessage("§8§m----------------------------------------");
-        sender.sendMessage("§e§lAsyncStone Admin Help:");
-        sender.sendMessage("§8» §e/asyncstone give <nick> <id> [ilosc] §7- Daje stoniarke graczowi");
-        sender.sendMessage("§8» §e/asyncstone reload §7- Przeladowuje konfiguracje");
-        sender.sendMessage("§8» §e/asyncstone help §7- Pokazuje to menu");
-        sender.sendMessage("§8§m----------------------------------------");
+    private void give(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(Config.MSG_GIVE_USAGE.getLegacyString());
+            return;
+        }
+
+        Player target = Bukkit.getPlayer(args[1]);
+        if (target == null) {
+            sender.sendMessage(Config.MSG_GIVE_PLAYER_OFFLINE.getLegacyString().replace("<player>", args[1]));
+            return;
+        }
+
+        String generatorId = args[2];
+
+        int amount = 1;
+        if (args.length >= 4) {
+            try {
+                amount = Math.max(1, Integer.parseInt(args[3]));
+            } catch (NumberFormatException e) {
+                sender.sendMessage(Config.MSG_GIVE_INVALID_AMOUNT.getLegacyString());
+                return;
+            }
+        }
+
+        ItemStack item = StoneGeneratorItem.create(generatorId);
+        if (item == null) {
+            sender.sendMessage(Config.MSG_GIVE_UNKNOWN_GENERATOR.getLegacyString().replace("<id>", generatorId));
+            return;
+        }
+
+        item.setAmount(amount);
+        // Full inventory: drop the rest at the player's feet instead of losing it.
+        target.getInventory().addItem(item).values()
+                .forEach(left -> target.getWorld().dropItemNaturally(target.getLocation(), left));
+
+        String amountText = String.valueOf(amount);
+        sender.sendMessage(Config.MSG_GIVE_SENT.getLegacyString()
+                .replace("<amount>", amountText)
+                .replace("<id>", generatorId)
+                .replace("<player>", target.getName()));
+        target.sendMessage(Config.MSG_GIVE_RECEIVED.getLegacyString().replace("<amount>", amountText));
     }
 
     @Override

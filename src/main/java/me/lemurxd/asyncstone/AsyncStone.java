@@ -3,26 +3,22 @@ package me.lemurxd.asyncstone;
 import me.lemurxd.asyncstone.commands.AsyncStoneCommand;
 import me.lemurxd.asyncstone.generators.BlockGenerationEngine;
 import me.lemurxd.asyncstone.generators.StoneCacheManager;
-import me.lemurxd.asyncstone.generators.StoneGenerator;
 import me.lemurxd.asyncstone.generators.settings.GeneratorsConfig;
-import me.lemurxd.asyncstone.listeners.ChunkLoadListener;
 import me.lemurxd.asyncstone.listeners.GeneratorBreakEvent;
 import me.lemurxd.asyncstone.listeners.GeneratorPlaceEvent;
 import me.lemurxd.asyncstone.listeners.GeneratorProtectionListener;
+import me.lemurxd.asyncstone.listeners.WorldLoadListener;
 import me.lemurxd.asyncstone.listeners.gui.GeneratorInteractEvent;
 import me.lemurxd.asyncstone.listeners.gui.GeneratorMenuListener;
-import me.lemurxd.asyncstone.records.ChunkKey;
 import me.lemurxd.asyncstone.utils.Config;
 import me.lemurxd.asyncstone.utils.DatabaseManager;
 import me.lemurxd.asyncstone.utils.RecipeManager;
 import net.milkbowl.vault.economy.Economy;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 public class AsyncStone extends JavaPlugin {
 
@@ -31,7 +27,8 @@ public class AsyncStone extends JavaPlugin {
     private RecipeManager recipeManager;
     private GeneratorsConfig generatorsConfig;
     private DatabaseManager databaseManager;
-    private BlockGenerationEngine  generationEngine;
+    private BlockGenerationEngine generationEngine;
+    private AsyncSaveTask saveTask;
     private Economy econ = null;
 
     @Override
@@ -39,44 +36,41 @@ public class AsyncStone extends JavaPlugin {
         instance = this;
 
         if (!setupEconomy()) {
-            System.err.println("[AsyncStone] Economy setup failed!");
+            getLogger().warning("Economy setup failed! Money upgrade costs will not work.");
         }
 
         this.cacheManager = new StoneCacheManager();
         this.recipeManager = new RecipeManager(this);
         this.generatorsConfig = new GeneratorsConfig(this);
-        this.databaseManager = new DatabaseManager(this);
+        this.databaseManager = new DatabaseManager(new File(getDataFolder(), "data.db"), getLogger());
         this.generationEngine = new BlockGenerationEngine(this);
 
         loadConfiguration();
+        databaseManager.connect();
+
+        WorldLoadListener worldLoader = new WorldLoadListener(cacheManager, databaseManager);
+        getServer().getWorlds().forEach(worldLoader::load);
 
         recipeManager.reloadRecipes();
 
-        registerListeners();
+        registerListeners(worldLoader);
         registerCommands();
 
-        new AsyncSaveTask(cacheManager, databaseManager).runTaskTimerAsynchronously(this, 6000L, 6000L);
+        saveTask = new AsyncSaveTask(cacheManager, databaseManager);
+        saveTask.runTaskTimerAsynchronously(this, 6000L, 6000L);
 
         getLogger().info("AsyncStone on!");
     }
 
     @Override
     public void onDisable() {
-        Map<ChunkKey, Collection<StoneGenerator>> dataToSave = new HashMap<>();
-
-        for (ChunkKey key : cacheManager.getDirtyChunks()) {
-            Collection<StoneGenerator> data = cacheManager.getGeneratorsInChunk(key);
-            if (data != null) {
-                dataToSave.put(key, data);
-            }
+        if (saveTask != null) {
+            saveTask.cancel();
+            saveTask.run();
         }
-
-        if (!dataToSave.isEmpty()) {
-            getLogger().info("Zapisywanie " + dataToSave.size() + " chunków ze stoniarkami do bazy...");
-            databaseManager.saveChunksBatch(dataToSave);
+        if (databaseManager != null) {
+            databaseManager.close();
         }
-
-        databaseManager.close();
 
         getLogger().info("AsyncStone off.");
     }
@@ -97,7 +91,6 @@ public class AsyncStone extends JavaPlugin {
         return econ;
     }
 
-
     private void loadConfiguration() {
         File configFile = new File(getDataFolder(), "config.yml");
 
@@ -117,17 +110,17 @@ public class AsyncStone extends JavaPlugin {
     public void softReload() {
         loadConfiguration();
         recipeManager.reloadRecipes();
-        getLogger().info("Przeladowano konfiguracje i receptury (Soft Reload)!");
+        getLogger().info("Configuration and recipes reloaded (soft reload)!");
     }
 
-
-    private void registerListeners() {
-        getServer().getPluginManager().registerEvents(new GeneratorPlaceEvent(instance, cacheManager, generationEngine), this);
-        getServer().getPluginManager().registerEvents(new GeneratorBreakEvent(instance, cacheManager, generationEngine), this);
-        getServer().getPluginManager().registerEvents(new ChunkLoadListener(cacheManager, databaseManager), this);
-        getServer().getPluginManager().registerEvents(new GeneratorInteractEvent(cacheManager), this);
-        getServer().getPluginManager().registerEvents(new GeneratorMenuListener(instance, cacheManager), this);
-        getServer().getPluginManager().registerEvents(new GeneratorProtectionListener(cacheManager), this);
+    private void registerListeners(WorldLoadListener worldLoader) {
+        PluginManager pm = getServer().getPluginManager();
+        pm.registerEvents(worldLoader, this);
+        pm.registerEvents(new GeneratorPlaceEvent(cacheManager, generationEngine), this);
+        pm.registerEvents(new GeneratorBreakEvent(this, cacheManager, generationEngine), this);
+        pm.registerEvents(new GeneratorInteractEvent(cacheManager), this);
+        pm.registerEvents(new GeneratorMenuListener(this, cacheManager), this);
+        pm.registerEvents(new GeneratorProtectionListener(cacheManager, generationEngine), this);
     }
 
     private void registerCommands() {
@@ -135,7 +128,6 @@ public class AsyncStone extends JavaPlugin {
         getCommand("asyncstone").setExecutor(commandClass);
         getCommand("asyncstone").setTabCompleter(commandClass);
     }
-
 
     public static AsyncStone getInstance() {
         return instance;

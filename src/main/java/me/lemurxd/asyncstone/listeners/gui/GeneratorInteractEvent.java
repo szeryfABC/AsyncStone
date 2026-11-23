@@ -9,24 +9,11 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
-
-import java.lang.reflect.Method;
+import org.bukkit.inventory.EquipmentSlot;
 
 public class GeneratorInteractEvent implements Listener {
 
     private final StoneCacheManager cacheManager;
-
-    private static Method getHandMethod;
-    private static boolean hasOffHand = false;
-
-    static {
-        try {
-            getHandMethod = PlayerInteractEvent.class.getMethod("getHand");
-            hasOffHand = true;
-        } catch (NoSuchMethodException e) {
-            hasOffHand = false;
-        }
-    }
 
     public GeneratorInteractEvent(StoneCacheManager cacheManager) {
         this.cacheManager = cacheManager;
@@ -37,9 +24,7 @@ public class GeneratorInteractEvent implements Listener {
         Player player = event.getPlayer();
 
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-
-        if (!isMainHand(event)) return;
-
+        if (event.getHand() != EquipmentSlot.HAND) return;
         if (!player.isSneaking()) return;
 
         Block clickedBlock = event.getClickedBlock();
@@ -52,18 +37,6 @@ public class GeneratorInteractEvent implements Listener {
 
             GeneratorMenu menu = new GeneratorMenu(player, generator);
             player.openInventory(menu.getInventory());
-        }
-    }
-
-    private boolean isMainHand(PlayerInteractEvent event) {
-        if (!hasOffHand) return true;
-
-        try {
-            Object hand = getHandMethod.invoke(event);
-
-            return hand != null && hand.toString().equals("HAND");
-        } catch (Exception e) {
-            return true;
         }
     }
 }

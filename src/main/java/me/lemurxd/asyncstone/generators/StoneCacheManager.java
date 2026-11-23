@@ -13,29 +13,20 @@ public class StoneCacheManager {
     private final Set<ChunkKey> dirtyChunks = ConcurrentHashMap.newKeySet();
 
     public StoneGenerator getGeneratorAt(Location loc) {
-        ChunkKey key = new ChunkKey(loc.getWorld().getUID(), loc.getBlockX() >> 4, loc.getBlockZ() >> 4);
-        Map<Location, StoneGenerator> chunkGenerators = cache.get(key);
-
-        if (chunkGenerators != null) {
-            return chunkGenerators.get(loc);
-        }
-        return null;
+        Map<Location, StoneGenerator> chunkGenerators = cache.get(Chunk.getKey(loc));
+        return chunkGenerators != null ? chunkGenerators.get(loc) : null;
     }
 
+    public boolean isStoneGenerator(Location loc) {
+        return getGeneratorAt(loc) != null;
+    }
+
+    // Merges instead of replacing, so a generator placed before the load finished is kept.
     public void loadChunkIntoCache(ChunkKey key, List<StoneGenerator> generators) {
-        Map<Location, StoneGenerator> chunkMap = new ConcurrentHashMap<>();
+        Map<Location, StoneGenerator> chunkMap = cache.computeIfAbsent(key, k -> new ConcurrentHashMap<>());
         for (StoneGenerator gen : generators) {
-            chunkMap.put(gen.getLocation(), gen);
+            chunkMap.putIfAbsent(gen.getLocation(), gen);
         }
-        cache.put(key, chunkMap);
-    }
-
-    public boolean isChunkTracked(ChunkKey key) {
-        return cache.containsKey(key);
-    }
-
-    public void markDirty(ChunkKey key) {
-        dirtyChunks.add(key);
     }
 
     public Set<ChunkKey> getDirtyChunks() {
@@ -51,25 +42,13 @@ public class StoneCacheManager {
     }
 
     public void removeGenerator(Location loc) {
-        ChunkKey key = new ChunkKey(loc.getWorld().getUID(), loc.getBlockX() >> 4, loc.getBlockZ() >> 4);
+        ChunkKey key = Chunk.getKey(loc);
         Map<Location, StoneGenerator> chunkGenerators = cache.get(key);
 
         if (chunkGenerators != null) {
             chunkGenerators.remove(loc);
-
             dirtyChunks.add(key);
         }
-    }
-
-    public StoneGenerator getGenerator(Location loc) {
-        ChunkKey key = Chunk.getKey(loc);
-        Map<Location, StoneGenerator> chunkGenerators = cache.get(key);
-
-        return chunkGenerators != null ? chunkGenerators.get(loc) : null;
-    }
-
-    public boolean isStoneGenerator(Location loc) {
-        return getGenerator(loc) != null;
     }
 
     public Collection<StoneGenerator> getGeneratorsInChunk(ChunkKey key) {

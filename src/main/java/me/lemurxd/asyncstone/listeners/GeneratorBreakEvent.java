@@ -6,6 +6,7 @@ import me.lemurxd.asyncstone.generators.StoneCacheManager;
 import me.lemurxd.asyncstone.generators.StoneGenerator;
 import me.lemurxd.asyncstone.generators.StoneGeneratorItem;
 import me.lemurxd.asyncstone.generators.settings.GeneratorSettings;
+import me.lemurxd.asyncstone.utils.Config;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -75,6 +76,6 @@ public class GeneratorBreakEvent implements Listener {
             loc.getWorld().dropItemNaturally(loc, itemToDrop);
         }
 
-        event.getPlayer().sendMessage("§c[AsyncStone] Zniszczono stoniarke!");
+        event.getPlayer().sendMessage(Config.MSG_GENERATOR_DESTROYED.getLegacyString());
     }
 }

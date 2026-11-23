@@ -35,7 +35,7 @@ public class BlockGenerationEngine {
                 return;
             }
 
-            Material toSpawn = getRandomDrop(settings.getDrops());
+            Material toSpawn = getRandomDrop(settings);
 
             if (toSpawn != null) {
                 targetBlock.setType(toSpawn, false);
@@ -44,15 +44,11 @@ public class BlockGenerationEngine {
         }, settings.getCooldown());
     }
 
-    private Material getRandomDrop(List<GeneratorSettings.DropEntry> drops) {
+    private Material getRandomDrop(GeneratorSettings settings) {
+        List<GeneratorSettings.DropEntry> drops = settings.getDrops();
         if (drops.isEmpty()) return Material.STONE;
 
-        double totalWeight = 0.0;
-        for (GeneratorSettings.DropEntry entry : drops) {
-            totalWeight += entry.chance();
-        }
-
-        double random = Math.random() * totalWeight;
+        double random = Math.random() * settings.getTotalDropWeight();
         double currentWeight = 0.0;
 
         for (GeneratorSettings.DropEntry entry : drops) {

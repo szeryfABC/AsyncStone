@@ -1,50 +1,36 @@
 package me.lemurxd.asyncstone.listeners;
 
-import de.tr7zw.changeme.nbtapi.NBTItem;
-import me.lemurxd.asyncstone.AsyncStone;
 import me.lemurxd.asyncstone.generators.BlockGenerationEngine;
 import me.lemurxd.asyncstone.generators.StoneCacheManager;
 import me.lemurxd.asyncstone.generators.StoneGenerator;
 import me.lemurxd.asyncstone.generators.StoneGeneratorItem;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import me.lemurxd.asyncstone.utils.Config;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.inventory.ItemStack;
 
 public class GeneratorPlaceEvent implements Listener {
 
-    private final AsyncStone plugin;
     private final StoneCacheManager cacheManager;
     private final BlockGenerationEngine generationEngine;
 
-    public GeneratorPlaceEvent(AsyncStone plugin, StoneCacheManager cacheManager, BlockGenerationEngine generationEngine) {
-        this.plugin = plugin;
+    public GeneratorPlaceEvent(StoneCacheManager cacheManager, BlockGenerationEngine generationEngine) {
         this.cacheManager = cacheManager;
         this.generationEngine = generationEngine;
     }
 
-    @EventHandler
+    // MONITOR + ignoreCancelled: only register the generator if no protection plugin blocked the placement.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
-        ItemStack itemInHand = event.getItemInHand();
+        String generatorId = StoneGeneratorItem.getGeneratorId(event.getItemInHand());
+        if (generatorId == null) return;
 
-        if (itemInHand == null || itemInHand.getType() == Material.AIR) return;
+        StoneGenerator generator = new StoneGenerator(event.getBlockPlaced().getLocation(), generatorId);
 
-        NBTItem nbtItem = new NBTItem(itemInHand);
+        cacheManager.addGenerator(generator);
+        generationEngine.triggerGeneration(generator);
 
-        if (nbtItem.hasTag(StoneGeneratorItem.GENERATOR_ID_KEY)) {
-
-            String generatorId = nbtItem.getString(StoneGeneratorItem.GENERATOR_ID_KEY);
-            Location placedLoc = event.getBlockPlaced().getLocation();
-
-            StoneGenerator generator = new StoneGenerator(placedLoc, generatorId);
-
-            cacheManager.addGenerator(generator);
-
-            generationEngine.triggerGeneration(generator);
-
-            event.getPlayer().sendMessage("§a[AsyncStone] Pomyslnie postawiono stoniarke!");
-        }
+        event.getPlayer().sendMessage(Config.MSG_GENERATOR_PLACED.getLegacyString());
     }
 }

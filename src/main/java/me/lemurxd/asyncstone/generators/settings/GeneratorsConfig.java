@@ -44,7 +44,7 @@ public class GeneratorsConfig {
 
             try {
                 Material material = Material.matchMaterial(section.getString("id", "END_STONE").toUpperCase());
-                String name = section.getString("name", "Brak nazwy");
+                String name = section.getString("name", "No name");
                 String typeStr = section.getString("type", "above").toUpperCase();
                 GeneratorSettings.Type type = GeneratorSettings.Type.valueOf(typeStr);
                 int cooldown = section.getInt("cooldown", 40);
@@ -91,7 +91,7 @@ public class GeneratorsConfig {
                 settingsCache.put(key, settings);
 
             } catch (Exception e) {
-                plugin.getLogger().warning("Blad parsowania stoniarki w sekcji: " + key + ". Sprawdz plik generators.yml!");
+                plugin.getLogger().warning("Failed to parse generator in section: " + key + ". Check generators.yml!");
                 e.printStackTrace();
             }
         }

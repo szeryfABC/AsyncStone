@@ -26,12 +26,12 @@ default-generator:
       - "S:STONE"
       - "R:REDSTONE"
   upgrade:
-    gen: stoniarka-poziom2
+    gen: generator-level-2
     cost:
       - "money:1000"
       - "item:DIAMOND:5"
 
-stoniarka-poziom2:
+generator-level-2:
   id: OBSIDIAN
   name: "&e&lStone Generator! &7[&cLevel 2&7]"
   lore:

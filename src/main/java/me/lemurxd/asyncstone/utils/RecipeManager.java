@@ -68,10 +68,10 @@ public class RecipeManager {
                         if (material != null) {
                             recipe.setIngredient(symbol, material);
                         } else {
-                            plugin.getLogger().warning("UWAGA! Niepoprawny material w configu (receptura dla " + generatorId + "): " + split[1]);
+                            plugin.getLogger().warning("WARNING! Invalid material in config (recipe for " + generatorId + "): " + split[1]);
                         }
                     } else {
-                        plugin.getLogger().warning("UWAGA! Zly format w configu (receptura dla " + generatorId + "): " + ingredientStr + " (Prawidlowy format to np. S:STONE)");
+                        plugin.getLogger().warning("WARNING! Wrong format in config (recipe for " + generatorId + "): " + ingredientStr + " (correct format is e.g. S:STONE)");
                     }
                 }
 
@@ -79,7 +79,7 @@ public class RecipeManager {
                 registeredResults.add(resultItem);
 
             } catch (Exception e) {
-                plugin.getLogger().severe("Wystapil blad podczas ladowania receptury dla stoniarki: " + generatorId);
+                plugin.getLogger().severe("Error while loading recipe for generator: " + generatorId);
                 e.printStackTrace();
             }
         }

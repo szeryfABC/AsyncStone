@@ -41,7 +41,46 @@ public enum Config {
     GUI_PICKUP_LORE("gui.pickup.lore", Arrays.asList(
             "&7Click here to safely",
             "&7pick up this generator."
-    ), true);
+    ), true),
+
+    GUI_COST_FREE("gui.cost.free", "Free", true),
+    GUI_COST_MONEY("gui.cost.money", "$<amount>", true),
+    GUI_COST_ITEM("gui.cost.item", "<amount>x <item>", true),
+
+    MSG_INFO("messages.info", Arrays.asList(
+            "&8&m----------------------------------------",
+            "&e&lAsyncStone &7v<version>",
+            "&7Author: &elemurxd_",
+            "&7GitHub: &bhttps://github.com/lemurxd_",
+            "&8&m----------------------------------------"
+    ), true),
+    MSG_HELP("messages.help", Arrays.asList(
+            "&8&m----------------------------------------",
+            "&e&lAsyncStone Admin Help:",
+            "&8» &e/asyncstone give <player> <id> [amount] &7- Gives a generator to a player",
+            "&8» &e/asyncstone reload &7- Reloads the configuration",
+            "&8» &e/asyncstone help &7- Shows this menu",
+            "&8&m----------------------------------------"
+    ), true),
+    MSG_NO_PERMISSION("messages.no_permission", "<prefix>&cYou don't have permission to do that!", true),
+    MSG_UNKNOWN_COMMAND("messages.unknown_command", "<prefix>&cUnknown command. Type &e/asyncstone help &cto see the list.", true),
+    MSG_RELOADED("messages.reloaded", "<prefix>&aConfiguration and recipes have been reloaded!", true),
+    MSG_GIVE_USAGE("messages.give.usage", "<prefix>&cUsage: /asyncstone give <player> <generator_id> [amount]", true),
+    MSG_GIVE_PLAYER_OFFLINE("messages.give.player_offline", "<prefix>&cPlayer &e<player> &cis not online!", true),
+    MSG_GIVE_UNKNOWN_GENERATOR("messages.give.unknown_generator", "<prefix>&cGenerator with ID '&e<id>&c' does not exist in generators.yml!", true),
+    MSG_GIVE_INVALID_AMOUNT("messages.give.invalid_amount", "<prefix>&cAmount must be a number!", true),
+    MSG_GIVE_SENT("messages.give.sent", "<prefix>&aGave &e<amount>x &agenerator (&e<id>&a) to &e<player>&a.", true),
+    MSG_GIVE_RECEIVED("messages.give.received", "<prefix>&aYou received &e<amount>x &agenerator!", true),
+
+    MSG_GENERATOR_PLACED("messages.generator.placed", "<prefix>&aGenerator placed successfully!", true),
+    MSG_GENERATOR_DESTROYED("messages.generator.destroyed", "<prefix>&cGenerator destroyed!", true),
+    MSG_GENERATOR_PICKED_UP("messages.generator.picked_up", "<prefix>&aGenerator picked up successfully!", true),
+    MSG_GENERATOR_GONE("messages.generator.gone", "<prefix>&cThis generator no longer exists.", true),
+
+    MSG_UPGRADE_MAX_LEVEL("messages.upgrade.max_level", "<prefix>&cThis generator is already at max level!", true),
+    MSG_UPGRADE_CANNOT_AFFORD("messages.upgrade.cannot_afford", "<prefix>&cYou can't afford this upgrade!", true),
+    MSG_UPGRADE_UNAVAILABLE("messages.upgrade.unavailable", "<prefix>&cThis upgrade is not available right now. Please tell an administrator.", true),
+    MSG_UPGRADE_SUCCESS("messages.upgrade.success", "<prefix>&aGenerator upgraded to: &e<name>", true);
 
     private final String path;
     private List<String> texts;
@@ -188,18 +227,26 @@ public enum Config {
         YamlConfiguration config = new YamlConfiguration();
 
         for (Config val : Config.values()) {
-            if (val.getType().equals(String.class)) config.set(val.getPath(), val.text);
-            else if (val.getType().equals(String[].class)) config.set(val.getPath(), val.texts);
-            else if (val.getType().equals(Integer.class)) config.set(val.getPath(), val.getInt());
-            else if (val.getType().equals(Boolean.class)) config.set(val.getPath(), val.getBoolean());
+            config.set(val.getPath(), val.rawValue());
         }
         return config;
+    }
+
+    private Object rawValue() {
+        if (type.equals(String[].class)) return texts;
+        if (type.equals(Integer.class)) return number;
+        if (type.equals(Boolean.class)) return bool;
+        return text;
     }
 
     private static int loadConfig(ConfigurationSection config) {
         int modify = 0;
         for (Config val : Config.values()) {
-            if (!config.contains(val.getPath())) modify++;
+            if (!config.contains(val.getPath())) {
+                modify++;
+                // write the default, so admins can see and edit every message in config.yml
+                config.set(val.getPath(), val.rawValue());
+            }
 
             if (val.getType().equals(String.class)) {
                 val.setValue(config.getString(val.getPath(), val.text));

@@ -24,6 +24,7 @@ public class GeneratorSettings {
     private final Type type;
     private final int cooldown;
     private final List<DropEntry> drops;
+    private final double totalDropWeight;
     private final UpgradeData upgradeData;
     private final List<String> recipeShape;
     private final List<String> recipeIngredients;
@@ -38,6 +39,7 @@ public class GeneratorSettings {
         this.type = type;
         this.cooldown = cooldown;
         this.drops = List.copyOf(drops);
+        this.totalDropWeight = drops.stream().mapToDouble(DropEntry::chance).sum();
         this.upgradeData = upgradeData;
 
         this.recipeShape = recipeShape != null ? List.copyOf(recipeShape) : null;
@@ -51,6 +53,7 @@ public class GeneratorSettings {
     public Type getType() { return type; }
     public int getCooldown() { return cooldown; }
     public List<DropEntry> getDrops() { return drops; }
+    public double getTotalDropWeight() { return totalDropWeight; }
     public UpgradeData getUpgradeData() { return upgradeData; }
     public List<String> getRecipeShape() { return recipeShape; }
     public List<String> getRecipeIngredients() { return recipeIngredients; }
