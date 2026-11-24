@@ -10,7 +10,6 @@ AsyncStone is a block generator management plugin. It replaces KGenerators — a
 
 ## Features
 
-- Creating generators with custom blocks, entities, and items. Configuration includes names, lore, and glowing effects.
 - Upgrade tree. A basic generator can be upgraded to produce rarer materials, such as iron, diamonds, or custom items.
 - Two generation modes: `"above"` spawns items above the generator, and `"replace"` replaces the block itself.
 - Configurable percentage chances for specific materials to drop (e.g., 50% for stone, 10% for diamond).
